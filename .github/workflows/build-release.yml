@@ -11,18 +11,30 @@ on:
     # Run every day at midnight UTC
     - cron: '0 0 * * *'
 
-# Add permissions needed for creating releases
-permissions:
-  contents: write
-  packages: write
-
 jobs:
   build:
-    name: Build for Linux
-    runs-on: ubuntu-latest
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: bbpPairings-linux
+            asset_name: bbpPairings-linux
+          - os: windows-latest
+            platform: windows
+            artifact_name: bbpPairings-windows.exe
+            asset_name: bbpPairings-windows
+          - os: macos-latest
+            platform: macos
+            artifact_name: bbpPairings-macos
+            asset_name: bbpPairings-macos
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0 # Required for git describe to work properly
 
@@ -93,12 +105,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      # Create or update the 'latest' tag for version releases (not daily builds)
-      - name: Update 'latest' tag
-        if: github.event_name != 'schedule' && startsWith(github.ref, 'refs/tags/v')
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git tag -f latest
-          git push -f origin latest
