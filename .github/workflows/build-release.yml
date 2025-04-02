@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0 # Required for git describe to work properly
 
@@ -69,7 +69,7 @@ jobs:
         mv bbpPairings.exe ${{ matrix.artifact_name }}
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: ${{ matrix.artifact_name }}
@@ -88,7 +88,7 @@ jobs:
 
       - name: Create tag for scheduled run
         if: github.event_name == 'schedule'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
@@ -107,7 +107,7 @@ jobs:
           echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         
       - name: Display structure of downloaded files
         run: ls -R
