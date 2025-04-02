@@ -11,6 +11,11 @@ on:
     # Run every day at midnight UTC
     - cron: '0 0 * * *'
 
+# Add permissions needed for creating releases
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build:
     name: Build for Linux
