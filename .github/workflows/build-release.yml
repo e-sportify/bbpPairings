@@ -13,25 +13,8 @@ on:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux
-            artifact_name: bbpPairings-linux
-            asset_name: bbpPairings-linux
-          - os: windows-latest
-            platform: windows
-            artifact_name: bbpPairings-windows.exe
-            asset_name: bbpPairings-windows
-          - os: macos-latest
-            platform: macos
-            artifact_name: bbpPairings-macos
-            asset_name: bbpPairings-macos
-
+    name: Build for Linux
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -39,40 +22,20 @@ jobs:
         fetch-depth: 0 # Required for git describe to work properly
 
     - name: Setup Linux build environment
-      if: matrix.platform == 'linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential g++ make
 
-    - name: Setup macOS build environment
-      if: matrix.platform == 'macos'
-      run: |
-        brew install gcc make
-
     - name: Build for Linux
-      if: matrix.platform == 'linux'
       run: |
         make COMP=gcc HOST=Linux bits=64
-        mv bbpPairings.exe ${{ matrix.artifact_name }}
-
-    - name: Build for Windows
-      if: matrix.platform == 'windows'
-      shell: pwsh
-      run: |
-        make COMP=gcc HOST=Windows bits=64
-        Copy-Item bbpPairings.exe -Destination ${{ matrix.artifact_name }}
-
-    - name: Build for macOS
-      if: matrix.platform == 'macos'
-      run: |
-        make COMP=gcc HOST=Mac bits=64
-        mv bbpPairings.exe ${{ matrix.artifact_name }}
+        mv bbpPairings.exe bbpPairings-linux
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.asset_name }}
-        path: ${{ matrix.artifact_name }}
+        name: bbpPairings-linux
+        path: bbpPairings-linux
         retention-days: 7
 
   release:
@@ -118,8 +81,6 @@ jobs:
         with:
           files: |
             bbpPairings-linux/bbpPairings-linux
-            bbpPairings-windows/bbpPairings-windows.exe
-            bbpPairings-macos/bbpPairings-macos
           tag_name: ${{ github.event_name == 'schedule' && format('nightly-{0}', steps.date.outputs.RELEASE_DATE) || github.ref_name }}
           name: ${{ github.event_name == 'schedule' && format('Daily build {0}', steps.date.outputs.RELEASE_DATE) || github.ref_name }}
           draft: false
