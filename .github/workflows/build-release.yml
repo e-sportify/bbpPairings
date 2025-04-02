@@ -2,11 +2,14 @@ name: Build and Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     tags:
       - 'v*' # Run workflow on version tags, e.g. v1.0.0
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
+  schedule:
+    # Run every day at midnight UTC
+    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -75,9 +78,34 @@ jobs:
   release:
     name: Create Release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
+      - name: Set up release date
+        if: github.event_name == 'schedule'
+        id: date
+        run: echo "RELEASE_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Create tag for scheduled run
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Configure Git
+        if: github.event_name == 'schedule'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+      - name: Create and push tag for daily build
+        if: github.event_name == 'schedule'
+        run: |
+          TAG_NAME="nightly-${{ steps.date.outputs.RELEASE_DATE }}"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+          echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         
@@ -92,8 +120,10 @@ jobs:
             bbpPairings-linux/bbpPairings-linux
             bbpPairings-windows/bbpPairings-windows.exe
             bbpPairings-macos/bbpPairings-macos
+          tag_name: ${{ github.event_name == 'schedule' && format('nightly-{0}', steps.date.outputs.RELEASE_DATE) || github.ref_name }}
+          name: ${{ github.event_name == 'schedule' && format('Daily build {0}', steps.date.outputs.RELEASE_DATE) || github.ref_name }}
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event_name == 'schedule' }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
