@@ -54,6 +54,11 @@ namespace swisssystems
         const tournament::Player &player1,
         const tournament::Tournament &tournament)
       {
+        // Don't pair advanced or eliminated players
+        if (player0.status != 0 || player1.status != 0) {
+          return false;
+        }
+
         constexpr unsigned int maxPointsSize =
           utility::typesizes
               ::bitsToRepresent<unsigned int>(tournament::maxRounds)
@@ -847,7 +852,7 @@ namespace swisssystems
       std::list<const tournament::Player *> sortedPlayers;
       for (tournament::Player &player : tournament.players)
       {
-        if (player.isValid)
+        if (player.isValid && player.status == 0) // Only include active players
         {
           if (player.matches.size() <= tournament.playedRounds)
           {

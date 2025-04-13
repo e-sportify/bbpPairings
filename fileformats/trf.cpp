@@ -452,6 +452,37 @@ namespace fileformats
       }
 
       /**
+       * Process an XXS line for player status.
+       */
+      void readPlayerStatus(
+        const std::u32string &line,
+        tournament::Tournament &tournament)
+      {
+        const tournament::player_index playerId =
+          readPlayerId(std::u32string(&line[4], &line[8]));
+        
+        if (playerId >= tournament.players.size())
+        {
+          tournament.players.insert(
+            tournament.players.end(),
+            playerId - tournament.players.size() + 1,
+            tournament::Player());
+        }
+
+        try {
+          const int status = readInt(line.substr(9));
+          if (status < 0 || status > 2) {
+            throw InvalidLineException();
+          }
+          tournament.players[playerId].status = status;
+        }
+        catch (const std::invalid_argument &)
+        {
+          throw InvalidLineException();
+        }
+      }
+
+      /**
        * Read a line containing a point value, throwing an InvalidLineException
        * if it is improperly formatted.
        */
@@ -958,6 +989,10 @@ namespace fileformats
                 result.pointsForPairingAllocatedBye = readPoints(line);
                 usePairingAllocatedByeScore = true;
               }
+              else if (prefix == U"XXS")
+              {
+                readPlayerStatus(line, result);
+              }
             }
             catch (const InvalidLineException &exception)
             {
@@ -1018,6 +1053,8 @@ namespace fileformats
       const std::vector<tournament::player_index> ranks =
         computeRanks(tournament);
       outputStream << std::setfill(' ') << std::right;
+      
+      // Write XXR line if needed
       if (tournament.playedRounds < tournament.expectedRounds)
       {
         outputStream
@@ -1025,6 +1062,8 @@ namespace fileformats
           << utility::uintstringconversion::toString(tournament.expectedRounds)
           << '\r';
       }
+
+      // Write player info and status
       for (const tournament::Player &player : tournament.players)
       {
         if (player.id > 9999u)
@@ -1037,6 +1076,8 @@ namespace fileformats
           throw LimitExceededException(
             "The output file format only supports ratings up to 9999.");
         }
+
+        // Write player data (001 line)
         outputStream << "001 "
           << std::setw(4)
           << utility::uintstringconversion::toString(player.id + 1u)
@@ -1056,8 +1097,17 @@ namespace fileformats
           << stringifyGames(player, ranks[player.id]);
 
         outputStream << '\r';
+
+        // Write player status if not active (status != 0)
+        if (player.status != 0) {
+          outputStream << "XXS "
+            << std::setw(4)
+            << utility::uintstringconversion::toString(player.id + 1u)
+            << ' '
+            << player.status
+            << '\r';
+        }
       }
-      outputStream << '\r';
 
       if (
         tournament.pointsForWin != 10u
