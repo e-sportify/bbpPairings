@@ -184,6 +184,9 @@ namespace tournament
      */
     bool isValid{ };
 
+    // Player status: 0=active, 1=advanced, 2=eliminated
+    int status{ 0 };
+
     Player() = default;
     Player(
         const player_index id_,

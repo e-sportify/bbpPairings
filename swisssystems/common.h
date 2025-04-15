@@ -137,6 +137,11 @@ namespace swisssystems
     const tournament::Player &player,
     const tournament::Tournament &tournament)
   {
+    // Advanced or eliminated players are not eligible for byes
+    if (player.status != 0) {
+      return false;
+    }
+    
     for (const tournament::Match &match : player.matches)
     {
       if (

@@ -977,7 +977,8 @@ namespace swisssystems
         int skippedByColorPref = 0;
         for (int j = startIndex; j > i && j < players.size(); j += direction) {
           if (matchingById[players[j]->id] != nullptr) continue;
-          if (players[i]->forbiddenPairs.count(players[j]->id) > 0) {
+          if (players[i]->forbiddenPairs.count(players[j]->id) > 0 
+              || players[i]->status != 0 || players[j]->status != 0) {
             hasGap = true;
             continue;
           }
@@ -1020,7 +1021,7 @@ namespace swisssystems
       for (tournament::Player &player : tournament.players)
       {
         adjusted_score adjustedScore{ };
-        if (player.isValid)
+        if (player.isValid && player.status == 0)
         {
           if (player.matches.size() <= tournament.playedRounds)
           {

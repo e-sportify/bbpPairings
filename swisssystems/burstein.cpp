@@ -551,6 +551,7 @@ namespace swisssystems
       {
         return
           player0.forbiddenPairs.count(player1.id)
+              || player0.status != 0 || player1.status != 0
               || (player0.absoluteColorPreference()
                     && player1.absoluteColorPreference()
                     && player0.colorPreference == player1.colorPreference)
@@ -726,7 +727,7 @@ namespace swisssystems
       for (tournament::Player &player : tournament.players)
       {
         adjusted_score adjustedScore{ };
-        if (player.isValid)
+        if (player.isValid && player.status == 0)
         {
           if (player.matches.size() <= tournament.playedRounds)
           {
