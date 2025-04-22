@@ -682,9 +682,22 @@ namespace fileformats
             }
             tournament::points points{ };
             tournament::round_index matchIndex{ };
+            // Only count points up until player becomes advanced/eliminated
+            tournament::round_index lastRoundToCount = tournament.playedRounds;
+            if (player.status != 0) {
+              // Look for first match after becoming advanced/eliminated
+              for (tournament::round_index i = 0; i < player.matches.size(); i++) {
+                const tournament::Match &match = player.matches[i];
+                if (match.matchScore == tournament::MATCH_SCORE_LOSS && !match.gameWasPlayed && !match.participatedInPairing) {
+                  lastRoundToCount = i;
+                  break;
+                }
+              }
+            }
+            
             for (const tournament::Match &match : player.matches)
             {
-              if (matchIndex >= tournament.playedRounds)
+              if (matchIndex >= lastRoundToCount)
               {
                 break;
               }
